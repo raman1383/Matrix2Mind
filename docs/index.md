@@ -1,6 +1,8 @@
 ---
 layout: default
 title: Matrix2Mind Blog
+description: Exploring transformers, data pipelines, large-scale training & inference, and RL
+theme: jekyll-theme-hacker
 ---
 
 # Matrix2Mind: From First Principles

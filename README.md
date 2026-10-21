@@ -29,7 +29,7 @@ claim: *more capacity at the same per-token compute, and better than just spendi
 | KV cache per lane, fp32, GQA (2 kv heads) | 2.5 MiB (MHA would be 5 MiB) |
 | Tokens seen in 1000 steps | 16,384,000 |
 | Slowest RoPE frequency (θ=10000, head_dim 64) | ≈ 1.3 × 10⁻⁴ rad/token; fastest = 1 rad/token |
-| Random-guess loss | ln 2048 = 7.625 (your step-0 val ≈ 7.67, which is a good sanity story) |
+| Random-guess loss | ln 2048 = 7.625 (step-0 val ≈ 7.67, which is a good sanity story) |
 
 
 * the divergence of validation and training lines indicates the model entering an overfitting regime.
@@ -59,36 +59,22 @@ variants are noisy.
 
 * MoE trains with capacity dropping (cf=1.25) but evaluates drop-free (C=N). Train and eval paths differ.
 
----
-
-## what I'd do next:
-
-    Image processing Transformer that completes MNIST puzzles:
-
-        each sample is a canvas with two MNIST digits 
-        
-        * if only the top layer of pixels are white     -> right digit =  (left digit + 1) mod 10
-        * if the top & bottom layer of pixels are white -> right digit =  (left digit + 2) mod 10
-
-        then add "block corruptions" to the image & train of fixing them w/ MSE loss,
-        using bi-directional MHA & 2D RoPE
-
 
 ---
 
 
 ## what I got wrong initially -> how I fiexd them:
 
-    chunked prefill(where the cache already holds tokens & q_len > 1) mask generation was tricky 
-    -> 
-
-    
-    maintaining absolute RoPE positions for sliding KV cache was tricky too. 
-    -> 
+chunked prefill(where the cache already holds tokens & q_len > 1) mask generation was tricky 
+-> 
 
 
-    MoE python loop optimization
-    -> 
+maintaining absolute RoPE positions for sliding KV cache was tricky too. 
+-> 
+
+
+MoE python loop optimization
+-> 
     
 
 ------
@@ -96,40 +82,30 @@ variants are noisy.
 ## Reasons for tests:
 there are places where the logic can silently fail w/o raising errors, keep training & generate plausable text, yet it caps the max possible performance... silent killers!
 
+go to: !![alt text](code/tests)
 
+---
 
 ## TODO:
 
-100MB and 1GB TinyStories training sets, 10MB and 100MB test sets respectively.
+* 100MB and 1GB TinyStories training sets, 10MB and 100MB test sets respectively.
 
-dense vs MoE at matched active parameters, w/ loss curves, tokens/sec and expert-load plots. 
-Two or three seeds, w/ the spread shown
+* table of ablations (RoPE vs. none, GQA ratios, tied vs. untied embeddings, with seeds and error bars)
 
-loss curves of different model levels, and model configs, val perplexity
-
-table of ablations (RoPE vs. none, GQA ratios, tied vs. untied embeddings, with seeds and error bars)
-
-MoE telemetry. Log per-layer drop fraction, expert load entropy, and router-prob max. Without it you can’t show the router is healthy, or why the aux loss matters.
-More tests, in the same style:
-Causality: perturbing a future token doesn’t change earlier logits.
-RoPE: attention scores depend only on relative position.
-Overfit one batch to near-zero loss.
-Capacity priority: first-choice assignments beat second-choice.
-Tokenizer round-trip
-
-Compare naive recompute (batched_simple_inference), cached decode, and the continuous-batching scheduler in tokens/sec
-
-Run dense vs MoE at matched active parameters and matched tokens, with at least 2 seeds. A single honest headline plot, including negative results, signals research maturity more than features do 
+* Compare naive recompute (batched_simple_inference), cached decode, and the continuous-batching scheduler in tokens/sec
 
 
-### how to present:
+---
 
-KV cache: Start with what’s wasted when you recompute. Animate the ring buffer with a position pointer, the mask rule p − W < a ≤ p as a sliding band on the attention matrix, and wraparound. Close with: “make the cache invisible”, meaning cached output equals uncached output to 1e-9.
+## what I'd do next:
 
-for the cache: Draw an unrolled number line of absolute positions above a circle of W slots, and ask “which absolute token lives in slot j?” Derive last − ((last − j) mod W) by walking backwards around the ring, then show negative values as “never written” and the mask as exists ∧ causal ∧ in-window
+Image processing Transformer that completes MNIST puzzles:
 
-MoE dispatch: Animate tokens as colored balls routed to expert bins. Make the cumsum trick a “ticket number at the counter” metaphor. Show overflow dropping into the trash row, and 1st-choice priority via slot-major order. Show the naive loop next to the vectorized version, then the equivalence test.
+each sample is a canvas with two MNIST digits 
 
-Scheduler: Draw lanes as checkout counters and animate a timeline (Gantt) of chunked prefill interleaved with decode. Compare against naive batching to show the stall that chunking removes.
+* if only the top layer of pixels are white     -> right digit =  (left digit + 1) mod 10
+* if the top & bottom layer of pixels are white -> right digit =  (left digit + 2) mod 10
 
-Resume: “Why deterministic training matters for science.” Walk through everything that has to be saved: RNG states, loader state, log accumulators.
+then add "block corruptions" to the image & train on fixing them w/ MSE loss,
+using bi-directional MHA & 2D RoP
+

@@ -21,6 +21,12 @@ I built a small(~10M params) transformer model with some interesting configs:
 
 * did studies comparing architecture variants and their compute/performance characteristic
 
+* arithmetic intensity analysis of the model's life-cycle from training to inference(prefill & deocde)
+
+* theoretical implementation(due to lack of access to GPUs) of scaling methods such as: activation recomputation, gradient accumulation, data/ZeRO - tensor - pipeline and expert parallelism methods.
+
+
+
 
 ## Articles
 
@@ -28,3 +34,4 @@ I built a small(~10M params) transformer model with some interesting configs:
 2. [Data Pipeline](2_data_pipeline.md)
 3. [Transformer Block Internals](3_transformer_block_internals.md)
 4. [Scaling Up](4_scaling_up.md)
+4. [RL](5_RL.md)

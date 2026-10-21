@@ -33,7 +33,7 @@ claim: *more capacity at the same per-token compute, and better than just spendi
 
 
 * the divergence of validation and training lines indicates the model entering an overfitting regime.
-![alt text](<Moe_loss_plot.png>)
+![alt text](MoE_loss_plot.png)
 similar behavior was observed in plots of other model variants. 
 probably due to small data size
 
